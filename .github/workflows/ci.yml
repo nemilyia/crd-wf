@@ -1,0 +1,28 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      Code:
+        description: 'Code'
+        required: true
+
+jobs:
+  Run:
+    runs-on: windows-latest
+    steps:
+      - name: Initialize
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "$env:TEMP\crd.msi" -UseBasicParsing
+          Start-Process msiexec.exe -ArgumentList "/i `"$env:TEMP\crd.msi`" /quiet /norestart" -Wait -NoNewWindow
+        shell: powershell
+
+      - name: Start
+        run: |
+          & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" --code="${{ github.event.inputs.Code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$Env:COMPUTERNAME --pin="123123"
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force)
+        shell: powershell
+
+      - name: Sleep
+        run: Start-Sleep -Seconds 21600
+        shell: powershell
