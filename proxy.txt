@@ -1,0 +1,1 @@
+https://t.me/proxy?server=4.tcp.us-cal-1.ngrok.io&port=27307&secret=
