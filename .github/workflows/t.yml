@@ -1,4 +1,4 @@
-name: CI
+name: MTProxy
 
 on:
   schedule:
@@ -16,10 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Generate secret
+        run: |
+          SECRET=$(docker run --rm nineseconds/mtg:2 generate-secret --hex google.com)
+          echo "SECRET=$SECRET" >> $GITHUB_ENV
+
       - name: Start mtg
         run: |
           docker run -d --network host nineseconds/mtg:2 \
-            run --bind 0.0.0.0:3128 "${{ secrets.MTG_SECRET }}"
+            run --bind 0.0.0.0:3128 "${{ env.SECRET }}"
 
       - name: Install ngrok
         run: |
@@ -38,7 +43,7 @@ jobs:
             | python3 -c "import sys,json; t=json.load(sys.stdin)['tunnels'][0]['public_url']; print(t.replace('tcp://',''))")
           HOST=$(echo $ADDR | cut -d: -f1)
           PORT=$(echo $ADDR | cut -d: -f2)
-          echo "https://t.me/proxy?server=$HOST&port=$PORT&secret=${{ secrets.MTG_SECRET }}" > proxy.txt
+          echo "tg://proxy?server=$HOST&port=$PORT&secret=${{ env.SECRET }}" > proxy.txt
           git config user.email "proxy-bot@github"
           git config user.name "Proxy Bot"
           git add proxy.txt
