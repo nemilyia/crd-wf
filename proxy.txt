@@ -1,1 +1,0 @@
-tg://proxy?server=8.tcp.ngrok.io&port=17889&secret=eecac8f2abd1795032392b1957fdae44df382e7463702e6e67726f6b2e696f
