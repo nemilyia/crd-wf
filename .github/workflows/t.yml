@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  schedule:
+    - cron: '0 */5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  proxy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mtg
+        run: |
+          curl -fsSL https://github.com/9seconds/mtg/releases/latest/download/mtg-linux-amd64 \
+            -o /usr/local/bin/mtg
+          chmod +x /usr/local/bin/mtg
+
+      - name: Install ngrok
+        run: |
+          curl -fsSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz | tar xz
+          sudo mv ngrok /usr/local/bin/
+
+      - name: Start mtg
+        run: mtg run --bind 0.0.0.0:3128 "${{ secrets.MTG_SECRET }}" &
+
+      - name: Start ngrok
+        run: ngrok tcp 3128 --authtoken "${{ secrets.NGROK_AUTH }}" &
+
+      - name: Wait for ngrok
+        run: sleep 5
+
+      - name: Update proxy.txt
+        run: |
+          ADDR=$(curl -s http://127.0.0.1:4040/api/tunnels | python3 -c "
+          import sys,json
+          t=json.load(sys.stdin)['tunnels'][0]['public_url']
+          print(t.replace('tcp://',''))
+          ")
+          HOST=$(echo $ADDR | cut -d: -f1)
+          PORT=$(echo $ADDR | cut -d: -f2)
+          echo "https://t.me/proxy?server=$HOST&port=$PORT&secret=${{ secrets.MTG_SECRET }}" > proxy.txt
+          git config user.email "proxy-bot@github"
+          git config user.name "Proxy Bot"
+          git add proxy.txt
+          git commit -m "update proxy $(date -u)"
+          git push
+
+      - name: Keep alive
+        run: sleep 20700
