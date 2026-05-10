@@ -16,19 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install mtg
+      - name: Start mtg
         run: |
-          curl -fsSL https://github.com/9seconds/mtg/releases/latest/download/mtg-linux-amd64 \
-            -o /usr/local/bin/mtg
-          chmod +x /usr/local/bin/mtg
+          docker run -d --network host nineseconds/mtg:2 \
+            run --bind 0.0.0.0:3128 "${{ secrets.MTG_SECRET }}"
 
       - name: Install ngrok
         run: |
           curl -fsSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz | tar xz
           sudo mv ngrok /usr/local/bin/
-
-      - name: Start mtg
-        run: mtg run --bind 0.0.0.0:3128 "${{ secrets.MTG_SECRET }}" &
 
       - name: Start ngrok
         run: ngrok tcp 3128 --authtoken "${{ secrets.NGROK_AUTH }}" &
@@ -38,11 +34,8 @@ jobs:
 
       - name: Update proxy.txt
         run: |
-          ADDR=$(curl -s http://127.0.0.1:4040/api/tunnels | python3 -c "
-          import sys,json
-          t=json.load(sys.stdin)['tunnels'][0]['public_url']
-          print(t.replace('tcp://',''))
-          ")
+          ADDR=$(curl -s http://127.0.0.1:4040/api/tunnels \
+            | python3 -c "import sys,json; t=json.load(sys.stdin)['tunnels'][0]['public_url']; print(t.replace('tcp://',''))")
           HOST=$(echo $ADDR | cut -d: -f1)
           PORT=$(echo $ADDR | cut -d: -f2)
           echo "https://t.me/proxy?server=$HOST&port=$PORT&secret=${{ secrets.MTG_SECRET }}" > proxy.txt
