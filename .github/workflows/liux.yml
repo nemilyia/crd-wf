@@ -13,10 +13,9 @@ jobs:
       - name: Initialize
         run: |
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xfce4 xfce4-terminal dbus-x11
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xfce4 xterm dbus-x11
           wget -q https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb -O /tmp/crd.deb
-          sudo dpkg -i /tmp/crd.deb
-          sudo apt-get install -f -y
+          sudo apt-get install -y /tmp/crd.deb
           echo "exec /etc/X11/Xsession /usr/bin/xfce4-session" > ~/.chrome-remote-desktop-session
           chmod +x ~/.chrome-remote-desktop-session
         shell: bash
