@@ -22,7 +22,7 @@ jobs:
 
       - name: Start
         run: |
-          /opt/google/chrome-remote-desktop/chrome-remote-desktop --start --code="${{ github.event.inputs.Code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname) --pin=123123
+          /opt/google/chrome-remote-desktop/chrome-remote-desktop --start --code "${{ github.event.inputs.Code }}" --redirect-url "https://remotedesktop.google.com/_/oauthredirect" --name "$(hostname)" --pin "123123"
           echo "runner:P@ssw0rd!" | sudo chpasswd
         shell: bash
 
