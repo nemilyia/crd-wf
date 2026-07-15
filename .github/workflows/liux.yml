@@ -1,0 +1,32 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      Code:
+        description: 'Code'
+        required: true
+
+jobs:
+  Run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Initialize
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xfce4 xfce4-terminal dbus-x11
+          wget -q https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb -O /tmp/crd.deb
+          sudo dpkg -i /tmp/crd.deb
+          sudo apt-get install -f -y
+          echo "exec /etc/X11/Xsession /usr/bin/xfce4-session" > ~/.chrome-remote-desktop-session
+          chmod +x ~/.chrome-remote-desktop-session
+        shell: bash
+
+      - name: Start
+        run: |
+          /opt/google/chrome-remote-desktop/chrome-remote-desktop --start --code="${{ github.event.inputs.Code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname) --pin=123123
+          echo "runner:P@ssw0rd!" | sudo chpasswd
+        shell: bash
+
+      - name: Sleep
+        run: sleep 21600
+        shell: bash
