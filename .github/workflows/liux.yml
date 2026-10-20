@@ -16,14 +16,13 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb xbase-clients python3-psutil dbus-x11 git curl
           wget -q https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb -O /tmp/crd.deb
           sudo apt-get install -y /tmp/crd.deb
-          curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --no-confirm --init none
+          curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
           . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-          if [ ! -f flake.nix ]; then
-            git clone https://gitlab.com/Viclia/swdtf.git ~/swdtf
-            cd ~/swdtf
+          if [ ! -d "$HOME/swdtf" ]; then
+            git clone https://gitlab.com/Viclia/swdtf.git "$HOME/swdtf"
           fi
-          nix run home-manager/master -- switch --flake .#runner
-          chmod +x ~/.chrome-remote-desktop-session
+          cd "$HOME/swdtf"
+          nix run home-manager/master -- switch -b backup --flake .#runner
         shell: bash
 
       - name: Start
