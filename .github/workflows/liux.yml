@@ -25,12 +25,15 @@ jobs:
           fi
           cd "$HOME/swdtf"
           nix run home-manager/master -- switch -b backup --flake .#runner
+          mkdir -p ~/.config/chrome-remote-desktop
+          echo "1920x1080" > ~/.config/chrome-remote-desktop/Size
+          printf '#!/bin/sh\nexport PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"\nexec /etc/X11/Xsession i3\n' > ~/.chrome-remote-desktop-session
+          chmod +x ~/.chrome-remote-desktop-session
         shell: bash
 
       - name: Start
         run: |
           DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="${{ github.event.inputs.Code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="$(hostname)" --pin=123123
-          sudo systemctl restart chrome-remote-desktop@runner.service
           echo "runner:runner" | sudo chpasswd
         shell: bash
 
