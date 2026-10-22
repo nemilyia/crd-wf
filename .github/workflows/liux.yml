@@ -10,30 +10,28 @@ jobs:
   Run:
     runs-on: ubuntu-latest
     steps:
+      - uses: cachix/install-nix-action@v31
+
       - name: Initialize
         run: |
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb xbase-clients python3-psutil dbus dbus-user-session dbus-x11 git curl libgl1-mesa-dri libglx-mesa0 libegl1 mesa-utils
-          sudo timedatectl set-timezone America/New_York
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            dbus-x11 xterm git \
+            fonts-font-awesome fonts-jetbrains-mono fonts-dejavu-core \
+            fonts-noto fonts-noto-color-emoji xfonts-base \
+            adwaita-icon-theme xcursor-themes \
+            mesa-utils libgl1-mesa-dri libglx-mesa0 libegl1 libgles2 \
+            libvulkan1 mesa-vulkan-drivers \
+            libxcb1 libxcb-keysyms1 libxcb-randr0 libxcb-render0 \
+            libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 \
+            x11-xserver-utils
           wget -q https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb -O /tmp/crd.deb
           sudo apt-get install -y /tmp/crd.deb
-          sudo groupadd -f chrome-remote-desktop
-          sudo usermod -a -G chrome-remote-desktop runner
-          curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
-          . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-          if [ ! -e /etc/dbus-1/session.conf ] && [ -f /usr/share/dbus-1/session.conf ]; then
-            sudo mkdir -p /etc/dbus-1
-            sudo ln -s /usr/share/dbus-1/session.conf /etc/dbus-1/session.conf
-          fi
-          if [ ! -d "$HOME/swdtf" ]; then
-            git clone https://gitlab.com/Viclia/swdtf.git "$HOME/swdtf"
-          fi
-          cd "$HOME/swdtf"
-          nix run home-manager/master -- switch -b backup --flake .#runner
-          mkdir -p ~/.config/chrome-remote-desktop
-          echo "1920x1080" > ~/.config/chrome-remote-desktop/Size
-          printf '#!/bin/sh\nexport TZ="America/New_York"\nexport PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"\nxrandr -s 1920x1080\nexec /etc/X11/Xsession i3\n' > ~/.chrome-remote-desktop-session
+          git clone https://gitlab.com/Viclia/swdtf.git ~/dotfiles
+          nix run github:nix-community/home-manager -- switch --flake ~/dotfiles#default -b backup
+          echo 'export XCURSOR_THEME=Adwaita' > ~/.chrome-remote-desktop-session
+          echo 'export XCURSOR_SIZE=24' >> ~/.chrome-remote-desktop-session
+          echo 'exec i3' >> ~/.chrome-remote-desktop-session
           chmod +x ~/.chrome-remote-desktop-session
         shell: bash
 
