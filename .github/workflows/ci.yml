@@ -8,74 +8,21 @@ on:
 
 jobs:
   Run:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-      - uses: cachix/install-nix-action@v31
-
       - name: Initialize
         run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            dbus-x11 xterm git xserver-xorg-video-dummy mesa-utils \
-            libgl1-mesa-dri libglx-mesa0 libegl1 libgles2 \
-            libvulkan1 mesa-vulkan-drivers \
-            fonts-font-awesome fonts-jetbrains-mono fonts-dejavu-core \
-            fonts-noto fonts-noto-color-emoji xfonts-base \
-            adwaita-icon-theme xcursor-themes \
-            libxcb1 libxcb-keysyms1 libxcb-randr0 libxcb-render0 \
-            libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 \
-            x11-xserver-utils
-          sudo tee /etc/X11/xorg.conf.d/10-headless.conf > /dev/null <<'EOF'
-          Section "Files"
-              ModulePath "/usr/lib/xorg/modules"
-          EndSection
-
-          Section "Module"
-              Load "glx"
-          EndSection
-
-          Section "Monitor"
-              Identifier "Monitor0"
-              Modeline "1920x1080" 148.50 1920 2008 2052 2200 1080 1084 1089 1125 +hsync +vsync
-              Option "PreferredMode" "1920x1080"
-          EndSection
-
-          Section "Device"
-              Identifier "Device0"
-              Driver "dummy"
-              VideoRam 256000
-              Option "AccelMethod" "glamor"
-          EndSection
-
-          Section "Screen"
-              Identifier "Screen0"
-              Device "Device0"
-              Monitor "Monitor0"
-              DefaultDepth 24
-              SubSection "Display"
-                  Depth 24
-                  Modes "1920x1080"
-              EndSubSection
-          EndSection
-          EOF
-          wget -q https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb -O /tmp/crd.deb
-          sudo apt-get install -y /tmp/crd.deb
-          git clone https://gitlab.com/Viclia/swdtf.git ~/dotfiles
-          nix run github:nix-community/home-manager -- switch --flake ~/dotfiles#default -b backup
-          echo 'export XCURSOR_THEME=Adwaita' > ~/.chrome-remote-desktop-session
-          echo 'export XCURSOR_SIZE=24' >> ~/.chrome-remote-desktop-session
-          echo 'export LIBGL_ALWAYS_SOFTWARE=1' >> ~/.chrome-remote-desktop-session
-          echo 'export GALLIUM_DRIVER=llvmpipe' >> ~/.chrome-remote-desktop-session
-          echo 'exec i3' >> ~/.chrome-remote-desktop-session
-          chmod +x ~/.chrome-remote-desktop-session
-        shell: bash
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "$env:TEMP\crd.msi" -UseBasicParsing
+          Start-Process msiexec.exe -ArgumentList "/i `"$env:TEMP\crd.msi`" /quiet /norestart" -Wait -NoNewWindow
+        shell: powershell
 
       - name: Start
         run: |
-          DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="${{ github.event.inputs.Code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="$(hostname)" --pin=123123
-          echo "runner:runner" | sudo chpasswd
-        shell: bash
+          & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" --code="${{ github.event.inputs.Code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$Env:COMPUTERNAME --pin="123123"
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force)
+        shell: powershell
 
       - name: Sleep
-        run: sleep 21600
-        shell: bash
+        run: Start-Sleep -Seconds 21600
+        shell: powershell
